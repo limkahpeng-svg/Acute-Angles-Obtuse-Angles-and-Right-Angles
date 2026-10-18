@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angle Explorer - Primary 3 Math Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#3b82f6',
+                            purple: '#8b5cf6',
+                            yellow: '#f59e0b',
+                            green: '#10b981',
+                            pink: '#ec4899',
+                            dark: '#1e293b'
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        nunito: ['Nunito', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f0fdf4;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .heading-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        /* Interactive Angle Arc styling */
+        .angle-arc {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .angle-arc:hover {
+            stroke-width: 3.5px;
+            filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.8));
+        }
+
+        .angle-arc.selected {
+            stroke: #f59e0b !important;
+            fill: rgba(245, 158, 11, 0.4) !important;
+            stroke-width: 4px !important;
+            animation: pulse-select 1.5s infinite alternate;
+        }
+
+        .angle-arc.correct {
+            stroke: #10b981 !important;
+            fill: rgba(16, 185, 129, 0.45) !important;
+            stroke-width: 4px !important;
+        }
+
+        .angle-arc.wrong {
+            stroke: #ef4444 !important;
+            fill: rgba(239, 68, 68, 0.45) !important;
+            stroke-width: 4px !important;
+        }
+
+        @keyframes pulse-select {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.03); }
+        }
+
+        /* Custom draggable right angle tester tool */
+        #tester-tool {
+            touch-action: none;
+            cursor: grab;
+        }
+
+        #tester-tool:active {
+            cursor: grabbing;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+        }
+
+        .bounce-gentle {
+            animation: bounce-gentle 2s infinite;
+        }
+
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+
+    <header class="bg-white border-b-4 border-emerald-400 px-4 py-3 shadow-md sticky top-0 z-30">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 bg-emerald-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg transform -rotate-3">
+                    <i class="fa-solid fa-ruler-combined"></i>
+                </div>
+                <div>
+                    <h1 class="heading-font text-2xl md:text-3xl font-bold text-emerald-700 leading-none">Angle Explorer</h1>
+                    <p class="text-xs font-semibold text-slate-500">Primary 3 Math Practice</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-4">
+                <div class="flex items-center bg-amber-100 border-2 border-amber-300 rounded-full px-3 py-1 text-amber-800 font-bold text-sm sm:text-base">
+                    <i class="fa-solid fa-star text-amber-500 mr-1.5 text-lg"></i>
+                    <span id="score-display">0</span>
+                </div>
+                <div class="flex items-center bg-blue-100 border-2 border-blue-300 rounded-full px-3 py-1 text-blue-800 font-bold text-sm sm:text-base">
+                    <i class="fa-solid fa-layer-group text-blue-500 mr-1.5"></i>
+                    <span id="level-display">Level 1/8</span>
+                </div>
+                <button id="sound-btn" onclick="toggleSound()" class="w-10 h-10 bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 rounded-full flex items-center justify-center text-slate-600 transition" title="Toggle Sound">
+                    <i id="sound-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl w-full mx-auto p-3 md:p-6 flex-grow flex flex-col gap-4">
+        
+        <div id="question-card" class="glass-panel border-2 border-emerald-300 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-amber-400 text-white flex-shrink-0 flex items-center justify-center text-2xl shadow">
+                    <i class="fa-solid fa-lightbulb"></i>
+                </div>
+                <div>
+                    <span id="target-badge" class="inline-block px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wide bg-purple-100 text-purple-800 mb-1">
+                        Task
+                    </span>
+                    <h2 id="question-text" class="heading-font text-lg md:text-xl font-bold text-slate-800">
+                        In the figure below, click to select all angles that are <span class="text-purple-600 font-extrabold underline decoration-wavy">greater than a right angle</span>.
+                    </h2>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                <button id="toggle-tester-btn" onclick="toggleTesterTool()" class="flex items-center gap-2 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-2 border-indigo-200 rounded-xl font-bold text-sm transition">
+                    <i class="fa-solid fa-vector-square"></i>
+                    <span id="tester-btn-text">Show Right Angle Tester</span>
+                </button>
+                <button onclick="resetCurrentSelection()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border-2 border-slate-300 rounded-xl font-bold text-sm transition">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 flex-grow">
+            
+            <div class="lg:col-span-3 bg-white rounded-3xl border-4 border-slate-200 shadow-lg p-3 md:p-6 flex flex-col justify-between relative overflow-hidden min-h-[420px]">
+                
+                <div id="mascot-hint" class="absolute top-4 left-4 z-10 glass-panel border border-slate-200 rounded-2xl p-3 shadow-md max-w-xs flex items-center gap-3 transition-opacity">
+                    <div class="text-3xl bounce-gentle">🦉</div>
+                    <div class="text-xs text-slate-700 font-semibold leading-tight">
+                        <span id="mascot-text">Click directly on the angle arcs in the shape to answer!</span>
+                    </div>
+                </div>
+
+                <div id="canvas-wrapper" class="w-full flex-grow flex items-center justify-center relative my-2">
+                    <svg id="game-svg" class="w-full h-full max-h-[500px] border border-slate-200 rounded-2xl bg-white shadow-inner" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+                    </svg>
+
+                    <!-- Draggable 90-Degree Set Square Tester Tool -->
+                    <div id="tester-tool" class="hidden absolute top-10 right-10 bg-indigo-500/20 border-4 border-indigo-600 rounded-tl-none rounded-tr-lg rounded-bl-lg rounded-br-lg shadow-2xl backdrop-blur-xs flex flex-col justify-between p-2 z-20 transition-transform origin-top-left" style="width: 140px; height: 140px; transform: rotate(0deg);">
+                        <div class="flex justify-between items-start">
+                            <span class="bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">90° Corner</span>
+                            <button onclick="rotateTesterTool(event)" class="w-7 h-7 bg-white hover:bg-indigo-100 text-indigo-700 rounded-full shadow flex items-center justify-center text-xs font-bold" title="Rotate Square">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                        </div>
+                        <div class="text-[10px] font-bold text-indigo-900 text-center bg-white/80 rounded py-0.5 pointer-events-none">
+                            Drag square corner to check angle
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                    <div class="flex items-center gap-4 text-xs font-extrabold text-slate-600 flex-wrap">
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded-full bg-blue-500 inline-block"></span> Acute (&lt; 90°)
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block"></span> Right Angle (= 90°)
+                        </span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="w-3.5 h-3.5 rounded-full bg-purple-500 inline-block"></span> Obtuse (&gt; 90°)
+                        </span>
+                    </div>
+
+                    <button id="submit-btn" onclick="checkAnswer()" class="w-full sm:w-auto px-8 py-3 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-lg rounded-2xl shadow-lg border-b-4 border-emerald-700 transition flex items-center justify-center gap-2">
+                        <span>Check Answer</span>
+                        <i class="fa-solid fa-check"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 flex flex-col gap-4">
+                
+                <div class="bg-white rounded-3xl border-3 border-slate-200 p-4 shadow-sm flex flex-col gap-3">
+                    <h3 class="heading-font font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-compass text-amber-500"></i> Angle Quick Guide
+                    </h3>
+                    
+                    <div class="p-2.5 rounded-xl bg-blue-50 border border-blue-200 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-blue-500 text-white flex items-center justify-center text-lg font-black">
+                            &lt;
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-blue-900 text-sm">Acute Angle</div>
+                            <div class="text-xs text-blue-700">Smaller than a right angle</div>
+                        </div>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500 text-white flex items-center justify-center text-lg font-black">
+                            L
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-emerald-900 text-sm">Right Angle</div>
+                            <div class="text-xs text-emerald-700">Square corner (Exactly 90°)</div>
+                        </div>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-purple-50 border border-purple-200 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-purple-500 text-white flex items-center justify-center text-lg font-black">
+                            &gt;
+                        </div>
+                        <div>
+                            <div class="font-extrabold text-purple-900 text-sm">Obtuse Angle</div>
+                            <div class="text-xs text-purple-700">Greater than a right angle</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-3xl border-3 border-slate-200 p-4 shadow-sm flex-grow">
+                    <h3 class="heading-font font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+                        <span>Level Select</span>
+                        <span class="text-xs font-normal text-slate-500">8 Questions</span>
+                    </h3>
+                    <div id="level-grid" class="grid grid-cols-4 gap-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="feedback-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl border-4 border-slate-200 max-w-md w-full p-6 text-center shadow-2xl transform transition-all scale-95 opacity-0" id="modal-content">
+            
+            <div id="modal-icon-bg" class="w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mb-4 shadow-lg">
+                <i id="modal-icon" class="fa-solid fa-trophy"></i>
+            </div>
+
+            <h3 id="modal-title" class="heading-font text-2xl font-bold text-slate-800 mb-2">Great Job!</h3>
+            <p id="modal-message" class="text-slate-600 font-semibold mb-4">You identified all the angles correctly!</p>
+
+            <div id="modal-explanation" class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-xs text-slate-600 mb-6 text-left space-y-1">
+            </div>
+
+            <div class="flex items-center justify-center gap-3">
+                <button onclick="closeModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition">
+                    Review Figure
+                </button>
+                <button id="next-level-btn" onclick="nextLevel()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-xl shadow-md border-b-4 border-emerald-700 transition">
+                    Next Level <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'correct') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                osc.frequency.setValueAtTime(783.99, now + 0.16);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(130, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const soundIcon = document.getElementById('sound-icon');
+            soundIcon.className = soundEnabled ? 'fa-solid fa-volume-high' : 'fa-solid fa-volume-xmark';
+        }
+
+        const LEVELS = [
+            {
+                id: 1,
+                title: "Exemplar Worksheet Question",
+                questionText: "In the figure below, how many of the marked angles are <span class='text-purple-600 font-extrabold underline decoration-wavy'>greater than a right angle</span> (obtuse)? Click to select them!",
+                targetType: "obtuse",
+                gridWidth: 12,
+                gridHeight: 8,
+                polygon: [
+                    { x: 3, y: 1 },  // Vertex 0: Top-left (Obtuse: 102.5°)
+                    { x: 2, y: 3 },  // Vertex 1: Leftmost (Acute: 63.4°)
+                    { x: 4, y: 3 },  // Vertex 2: Inner notch (Unmarked)
+                    { x: 3, y: 6 },  // Vertex 3: Lower point (Acute: 85.6°)
+                    { x: 7, y: 7 },  // Vertex 4: Bottom-right (Acute: 76.0°)
+                    { x: 7, y: 2 }   // Vertex 5: Top-right (Obtuse: 104.0°)
+                ],
+                markedVertices: [0, 1, 3, 4, 5]
+            },
+            {
+                id: 2,
+                title: "Finding Right Angles",
+                questionText: "Click on all the <span class='text-emerald-600 font-extrabold underline decoration-wavy'>right angles</span> (square corners = 90°) in this L-shaped figure.",
+                targetType: "right",
+                gridWidth: 10,
+                gridHeight: 8,
+                polygon: [
+                    { x: 2, y: 1 },
+                    { x: 8, y: 1 },
+                    { x: 8, y: 4 },
+                    { x: 5, y: 4 },
+                    { x: 5, y: 7 },
+                    { x: 2, y: 7 }
+                ],
+                markedVertices: [0, 1, 2, 4, 5] // 5 outer 90° corners
+            },
+            {
+                id: 3,
+                title: "Triangle Acute Angles",
+                questionText: "Click on all the <span class='text-blue-600 font-extrabold underline decoration-wavy'>acute angles</span> (smaller than a right angle) in this triangle.",
+                targetType: "acute",
+                gridWidth: 10,
+                gridHeight: 8,
+                polygon: [
+                    { x: 5, y: 1 },
+                    { x: 8, y: 6 },
+                    { x: 2, y: 6 }
+                ],
+                markedVertices: [0, 1, 2]
+            },
+            {
+                id: 4,
+                title: "Arrowhead Challenge",
+                questionText: "How many marked angles are <span class='text-blue-600 font-extrabold underline decoration-wavy'>acute</span> (smaller than a right angle)? Click them!",
+                targetType: "acute",
+                gridWidth: 10,
+                gridHeight: 8,
+                polygon: [
+                    { x: 5, y: 1 },
+                    { x: 8, y: 5 },
+                    { x: 5, y: 3 },
+                    { x: 2, y: 5 }
+                ],
+                markedVertices: [0, 1, 3]
+            },
+            {
+                id: 5,
+                title: "Trapezoid Angles",
+                questionText: "Identify all angles that are <span class='text-purple-600 font-extrabold underline decoration-wavy'>greater than a right angle</span> (obtuse).",
+                targetType: "obtuse",
+                gridWidth: 10,
+                gridHeight: 8,
+                polygon: [
+                    { x: 3, y: 2 },
+                    { x: 7, y: 2 },
+                    { x: 9, y: 6 },
+                    { x: 1, y: 6 }
+                ],
+                markedVertices: [0, 1, 2, 3]
+            },
+            {
+                id: 6,
+                title: "House Contour",
+                questionText: "Find and select all the <span class='text-emerald-600 font-extrabold underline decoration-wavy'>right angles</span> (exactly 90°).",
+                targetType: "right",
+                gridWidth: 10,
+                gridHeight: 8,
+                polygon: [
+                    { x: 5, y: 1 },
+                    { x: 8, y: 3 },
+                    { x: 8, y: 7 },
+                    { x: 2, y: 7 },
+                    { x: 2, y: 3 }
+                ],
+                markedVertices: [0, 1, 2, 3, 4]
+            },
+            {
+                id: 7,
+                title: "Square Diamond",
+                questionText: "Select all the <span class='text-emerald-600 font-extrabold underline decoration-wavy'>right angles</span> (square corners = 90°).",
+                targetType: "right",
+                gridWidth: 10,
+                gridHeight: 8,
+                polygon: [
+                    { x: 5, y: 1 },
+                    { x: 8, y: 4 },
+                    { x: 5, y: 7 },
+                    { x: 2, y: 4 }
+                ],
+                markedVertices: [0, 1, 2, 3]
+            },
+            {
+                id: 8,
+                title: "Irregular Gem Figure",
+                questionText: "Find all angles that are <span class='text-purple-600 font-extrabold underline decoration-wavy'>greater than a right angle</span> (obtuse).",
+                targetType: "obtuse",
+                gridWidth: 10,
+                gridHeight: 8,
+                polygon: [
+                    { x: 3, y: 1 },
+                    { x: 7, y: 1 },
+                    { x: 9, y: 4 },
+                    { x: 6, y: 7 },
+                    { x: 1, y: 4 }
+                ],
+                markedVertices: [0, 1, 2, 3, 4]
+            }
+        ];
+
+        /* STATE VARIABLES */
+        let currentLevelIdx = 0;
+        let score = 0;
+        let selectedAngleIndices = new Set();
+        let angleAnalysisResults = [];
+
+        function calculateInteriorAngle(points, i) {
+            const n = points.length;
+            const prev = points[(i - 1 + n) % n];
+            const curr = points[i];
+            const next = points[(i + 1) % n];
+
+            const u = { x: prev.x - curr.x, y: prev.y - curr.y };
+            const v = { x: next.x - curr.x, y: next.y - curr.y };
+
+            const lenU = Math.hypot(u.x, u.y);
+            const lenV = Math.hypot(v.x, v.y);
+
+            if (lenU === 0 || lenV === 0) {
+                return { deg: 0, type: "acute", u: u, v: v, lenU: 1, lenV: 1, cross: 0 };
+            }
+
+            const dot = u.x * v.x + u.y * v.y;
+            let cosAngle = dot / (lenU * lenV);
+            cosAngle = Math.max(-1, Math.min(1, cosAngle));
+            
+            let deg = (Math.acos(cosAngle) * 180) / Math.PI;
+            const cross = u.x * v.y - u.y * v.x;
+
+            let type = "acute";
+            if (Math.abs(deg - 90) < 0.5) {
+                type = "right";
+                deg = 90;
+            } else if (deg < 90) {
+                type = "acute";
+            } else {
+                type = "obtuse";
+            }
+
+            return {
+                deg: Math.round(deg * 10) / 10,
+                type: type,
+                u: u,
+                v: v,
+                lenU: lenU,
+                lenV: lenV,
+                cross: cross
+            };
+        }
+
+        function loadLevel(idx) {
+            currentLevelIdx = idx;
+            const level = LEVELS[idx];
+            selectedAngleIndices.clear();
+
+            document.getElementById('level-display').innerText = `Level ${idx + 1}/${LEVELS.length}`;
+            document.getElementById('question-text').innerHTML = level.questionText;
+
+            const badge = document.getElementById('target-badge');
+            if (level.targetType === 'obtuse') {
+                badge.className = "inline-block px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wide bg-purple-100 text-purple-800 mb-1";
+                badge.innerText = "Target: Obtuse Angles (> 90°)";
+            } else if (level.targetType === 'right') {
+                badge.className = "inline-block px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wide bg-emerald-100 text-emerald-800 mb-1";
+                badge.innerText = "Target: Right Angles (= 90°)";
+            } else {
+                badge.className = "inline-block px-2.5 py-0.5 rounded-full text-xs font-extrabold uppercase tracking-wide bg-blue-100 text-blue-800 mb-1";
+                badge.innerText = "Target: Acute Angles (< 90°)";
+            }
+
+            renderLevelGrid();
+            renderSVGFigure(level);
+        }
+
+        function renderSVGFigure(level) {
+            const svg = document.getElementById('game-svg');
+            svg.innerHTML = '';
+
+            // MUST use uniform square cell size to avoid aspect-ratio angle distortion!
+            const CELL_SIZE = 55;
+            const padding = 45;
+
+            const gridCols = level.gridWidth;
+            const gridRows = level.gridHeight;
+
+            const svgWidth = padding * 2 + gridCols * CELL_SIZE;
+            const svgHeight = padding * 2 + gridRows * CELL_SIZE;
+
+            svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+
+            function toPixel(pt) {
+                return {
+                    x: padding + pt.x * CELL_SIZE,
+                    y: padding + pt.y * CELL_SIZE
+                };
+            }
+
+            /* Draw Square Grid Lines */
+            const gridGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            gridGroup.setAttribute("stroke", "#cbd5e1");
+            gridGroup.setAttribute("stroke-width", "1.5");
+
+            for (let c = 0; c <= gridCols; c++) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", padding + c * CELL_SIZE);
+                line.setAttribute("y1", padding);
+                line.setAttribute("x2", padding + c * CELL_SIZE);
+                line.setAttribute("y2", svgHeight - padding);
+                gridGroup.appendChild(line);
+            }
+            for (let r = 0; r <= gridRows; r++) {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", padding);
+                line.setAttribute("y1", padding + r * CELL_SIZE);
+                line.setAttribute("x2", svgWidth - padding);
+                line.setAttribute("y2", padding + r * CELL_SIZE);
+                gridGroup.appendChild(line);
+            }
+            svg.appendChild(gridGroup);
+
+            /* Compute Polygon Pixel Coordinates */
+            const pixelPolygon = level.polygon.map(toPixel);
+            angleAnalysisResults = [];
+
+            level.polygon.forEach((pt, i) => {
+                const analysis = calculateInteriorAngle(level.polygon, i);
+                angleAnalysisResults.push({
+                    vertexIndex: i,
+                    gridPt: pt,
+                    pixelPt: pixelPolygon[i],
+                    deg: analysis.deg,
+                    type: analysis.type,
+                    u: analysis.u,
+                    v: analysis.v,
+                    lenU: analysis.lenU,
+                    lenV: analysis.lenV,
+                    cross: analysis.cross,
+                    isMarked: level.markedVertices.includes(i)
+                });
+            });
+
+            /* Draw Main Polygon Figure */
+            const polyPointsStr = pixelPolygon.map(p => `${p.x},${p.y}`).join(" ");
+            const polygonEl = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            polygonEl.setAttribute("points", polyPointsStr);
+            polygonEl.setAttribute("fill", "rgba(248, 250, 252, 0.75)");
+            polygonEl.setAttribute("stroke", "#1e293b");
+            polygonEl.setAttribute("stroke-width", "3.5");
+            polygonEl.setAttribute("stroke-linejoin", "round");
+            svg.appendChild(polygonEl);
+
+            /* Draw Interactive Angle Arcs & Corner Boxes */
+            angleAnalysisResults.forEach((item) => {
+                if (!item.isMarked) return;
+
+                const i = item.vertexIndex;
+                const curr = pixelPolygon[i];
+
+                const angleGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                angleGroup.setAttribute("class", "angle-group");
+                angleGroup.setAttribute("data-index", i);
+
+                const uUnit = { x: item.u.x / item.lenU, y: item.u.y / item.lenU };
+                const vUnit = { x: item.v.x / item.lenV, y: item.v.y / item.lenV };
+
+                let d = "";
+
+                if (item.type === 'right') {
+                    // Render precise square corner box for 90° right angles
+                    const boxSize = 22;
+                    const p1 = { x: curr.x + uUnit.x * boxSize, y: curr.y + uUnit.y * boxSize };
+                    const p2 = { x: curr.x + vUnit.x * boxSize, y: curr.y + vUnit.y * boxSize };
+                    const pCorner = { x: p1.x + vUnit.x * boxSize, y: p1.y + vUnit.y * boxSize };
+
+                    d = `M ${curr.x} ${curr.y} L ${p1.x} ${p1.y} L ${pCorner.x} ${pCorner.y} L ${p2.x} ${p2.y} Z`;
+                } else {
+                    // Render smooth circular arc sector for acute (< 90°) and obtuse (> 90°)
+                    const r = 30;
+                    const pStart = { x: curr.x + uUnit.x * r, y: curr.y + uUnit.y * r };
+                    const pEnd = { x: curr.x + vUnit.x * r, y: curr.y + vUnit.y * r };
+
+                    const sweepFlag = item.cross > 0 ? 1 : 0;
+
+                    d = `M ${curr.x} ${curr.y} L ${pStart.x} ${pStart.y} A ${r} ${r} 0 0 ${sweepFlag} ${pEnd.x} ${pEnd.y} Z`;
+                }
+
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", d);
+                path.setAttribute("id", `angle-arc-${i}`);
+                path.setAttribute("class", "angle-arc");
+                path.setAttribute("fill", item.type === 'right' ? "rgba(16, 185, 129, 0.25)" : "rgba(59, 130, 246, 0.2)");
+                path.setAttribute("stroke", item.type === 'right' ? "#10b981" : "#2563eb");
+                path.setAttribute("stroke-width", "2.5");
+
+                angleGroup.addEventListener("click", () => toggleAngleSelect(i));
+                angleGroup.appendChild(path);
+
+                const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                dot.setAttribute("cx", curr.x);
+                dot.setAttribute("cy", curr.y);
+                dot.setAttribute("r", "4.5");
+                dot.setAttribute("fill", "#1e293b");
+                angleGroup.appendChild(dot);
+
+                svg.appendChild(angleGroup);
+            });
+        }
+
+        function toggleAngleSelect(index) {
+            playSound('click');
+            const arc = document.getElementById(`angle-arc-${index}`);
+            if (!arc) return;
+
+            if (selectedAngleIndices.has(index)) {
+                selectedAngleIndices.delete(index);
+                arc.classList.remove('selected');
+            } else {
+                selectedAngleIndices.add(index);
+                arc.classList.add('selected');
+            }
+
+            const count = selectedAngleIndices.size;
+            document.getElementById('mascot-text').innerText = count === 0 
+                ? "Click directly on the angle arcs to select your answers!" 
+                : `You have selected ${count} angle${count > 1 ? 's' : ''}. Click 'Check Answer' when ready!`;
+        }
+
+        function resetCurrentSelection() {
+            playSound('click');
+            selectedAngleIndices.forEach(idx => {
+                const arc = document.getElementById(`angle-arc-${idx}`);
+                if (arc) arc.classList.remove('selected', 'correct', 'wrong');
+            });
+            selectedAngleIndices.clear();
+            document.getElementById('mascot-text').innerText = "Selection cleared. Click on the angle arcs to answer!";
+        }
+
+        function checkAnswer() {
+            const level = LEVELS[currentLevelIdx];
+            const targetType = level.targetType;
+
+            const correctIndices = angleAnalysisResults
+                .filter(item => item.isMarked && item.type === targetType)
+                .map(item => item.vertexIndex);
+
+            let isAllCorrect = true;
+
+            if (selectedAngleIndices.size !== correctIndices.length) {
+                isAllCorrect = false;
+            } else {
+                correctIndices.forEach(idx => {
+                    if (!selectedAngleIndices.has(idx)) isAllCorrect = false;
+                });
+            }
+
+            angleAnalysisResults.forEach(item => {
+                if (!item.isMarked) return;
+                const idx = item.vertexIndex;
+                const arc = document.getElementById(`angle-arc-${idx}`);
+                if (!arc) return;
+
+                const isTarget = item.type === targetType;
+                const isSelected = selectedAngleIndices.has(idx);
+
+                arc.classList.remove('selected');
+
+                if (isTarget) {
+                    arc.classList.add('correct');
+                } else if (isSelected && !isTarget) {
+                    arc.classList.add('wrong');
+                }
+            });
+
+            showModal(isAllCorrect, level, correctIndices);
+        }
+
+        function showModal(isCorrect, level, correctIndices) {
+            const modal = document.getElementById('feedback-modal');
+            const modalContent = document.getElementById('modal-content');
+            const iconBg = document.getElementById('modal-icon-bg');
+            const icon = document.getElementById('modal-icon');
+            const title = document.getElementById('modal-title');
+            const msg = document.getElementById('modal-message');
+            const explanation = document.getElementById('modal-explanation');
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            if (isCorrect) {
+                playSound('correct');
+                score += 100;
+                document.getElementById('score-display').innerText = score;
+
+                iconBg.className = "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mb-4 shadow-lg bg-emerald-100 text-emerald-600";
+                icon.className = "fa-solid fa-circle-check";
+                title.innerText = "Awesome Job! 🎉";
+                title.className = "heading-font text-2xl font-bold text-emerald-700 mb-2";
+                msg.innerText = `You correctly identified all ${correctIndices.length} ${level.targetType} angle(s)!`;
+            } else {
+                playSound('wrong');
+                iconBg.className = "w-20 h-20 rounded-full mx-auto flex items-center justify-center text-4xl mb-4 shadow-lg bg-amber-100 text-amber-600";
+                icon.className = "fa-solid fa-circle-xmark";
+                title.innerText = "Let's Check Together! 💡";
+                title.className = "heading-font text-2xl font-bold text-amber-700 mb-2";
+                msg.innerText = "Some angles were missed or incorrectly selected.";
+            }
+
+            let expHTML = `<div class="font-bold text-slate-800 mb-1.5">Angle Breakdown for marked corners:</div>`;
+            angleAnalysisResults.forEach(item => {
+                if (!item.isMarked) return;
+
+                let typeName = "";
+                let badgeColor = "";
+                if (item.type === 'right') {
+                    typeName = 'Right Angle (= 90.0°)';
+                    badgeColor = 'bg-emerald-100 text-emerald-800';
+                } else if (item.type === 'acute') {
+                    typeName = `Acute Angle (< 90°) (${item.deg}°)`;
+                    badgeColor = 'bg-blue-100 text-blue-800';
+                } else {
+                    typeName = `Obtuse Angle (> 90°) (${item.deg}°)`;
+                    badgeColor = 'bg-purple-100 text-purple-800';
+                }
+
+                expHTML += `
+                    <div class="flex items-center justify-between py-1 border-b border-slate-200/60 last:border-0">
+                        <span class="font-semibold text-slate-700">Corner (${item.gridPt.x}, ${item.gridPt.y}):</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold ${badgeColor}">${typeName}</span>
+                    </div>
+                `;
+            });
+            explanation.innerHTML = expHTML;
+        }
+
+        function closeModal() {
+            playSound('click');
+            const modal = document.getElementById('feedback-modal');
+            const modalContent = document.getElementById('modal-content');
+
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function nextLevel() {
+            closeModal();
+            if (currentLevelIdx < LEVELS.length - 1) {
+                loadLevel(currentLevelIdx + 1);
+            } else {
+                loadLevel(0);
+            }
+        }
+
+        function renderLevelGrid() {
+            const grid = document.getElementById('level-grid');
+            grid.innerHTML = '';
+
+            LEVELS.forEach((lvl, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `h-10 rounded-xl font-bold text-sm flex items-center justify-center transition border-2 ${
+                    idx === currentLevelIdx
+                        ? 'bg-emerald-500 text-white border-emerald-600 shadow-md scale-105'
+                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                }`;
+                btn.innerText = idx + 1;
+                btn.onclick = () => {
+                    playSound('click');
+                    loadLevel(idx);
+                };
+                grid.appendChild(btn);
+            });
+        }
+
+        let testerToolVisible = false;
+        let testerRotation = 0;
+
+        function toggleTesterTool() {
+            playSound('click');
+            const tool = document.getElementById('tester-tool');
+            const btnText = document.getElementById('tester-btn-text');
+            testerToolVisible = !testerToolVisible;
+
+            if (testerToolVisible) {
+                tool.classList.remove('hidden');
+                btnText.innerText = "Hide Tester Tool";
+            } else {
+                tool.classList.add('hidden');
+                btnText.innerText = "Show Right Angle Tester";
+            }
+        }
+
+        function rotateTesterTool(e) {
+            e.stopPropagation();
+            playSound('click');
+            testerRotation = (testerRotation + 45) % 360;
+            const tool = document.getElementById('tester-tool');
+            tool.style.transform = `rotate(${testerRotation}deg)`;
+        }
+
+        const testerTool = document.getElementById('tester-tool');
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        testerTool.addEventListener('mousedown', startDrag);
+        testerTool.addEventListener('touchstart', startDrag, { passive: false });
+
+        function startDrag(e) {
+            isDragging = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const rect = testerTool.getBoundingClientRect();
+            dragOffsetX = clientX - rect.left;
+            dragOffsetY = clientY - rect.top;
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('touchmove', onDrag, { passive: false });
+            document.addEventListener('mouseup', stopDrag);
+            document.addEventListener('touchend', stopDrag);
+        }
+
+        function onDrag(e) {
+            if (!isDragging) return;
+            if (e.preventDefault) e.preventDefault();
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            const wrapper = document.getElementById('canvas-wrapper').getBoundingClientRect();
+
+            let newLeft = clientX - wrapper.left - dragOffsetX;
+            let newTop = clientY - wrapper.top - dragOffsetY;
+
+            testerTool.style.left = `${newLeft}px`;
+            testerTool.style.top = `${newTop}px`;
+        }
+
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('touchmove', onDrag);
+            document.removeEventListener('mouseup', stopDrag);
+            document.removeEventListener('touchend', stopDrag);
+        }
+
+        window.onload = function() {
+            loadLevel(0);
+        };
+    </script>
+</body>
+</html>
